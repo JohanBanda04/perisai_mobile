@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:perisai_mobile/helpers/api_endpoints.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:perisai_mobile/helpers/app_colors.dart';
 
@@ -28,7 +29,7 @@ class _DataMasterPageState extends State<DataMasterPage> {
 
     try {
       final response = await http.get(
-        Uri.parse('http://127.0.0.1:93/api/datasatker'),
+        Uri.parse(ApiEndpoints.dataSatker),
         headers: {
           'Accept': 'application/json',
           'Authorization': 'Bearer $token',
@@ -90,7 +91,7 @@ class _DataMasterPageState extends State<DataMasterPage> {
                               backgroundColor: AppColors.primary,
                               backgroundImage: user['foto'] != null
                                   ? NetworkImage(
-                                      'http://127.0.0.1:93/assets/img/satker/${user['foto']}',
+                                      ApiEndpoints.fotoSatker(user['foto']),
                                     )
                                   : null,
                               child: user['foto'] == null

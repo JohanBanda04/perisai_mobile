@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:perisai_mobile/helpers/api_endpoints.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:perisai_mobile/helpers/app_colors.dart';
 
@@ -38,7 +39,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
     try {
       final response = await http.post(
-        Uri.parse('http://127.0.0.1:93/api/logout-satker'),
+        Uri.parse(ApiEndpoints.logoutSatker),
         headers: {
           'Accept': 'application/json',
           'Authorization': 'Bearer $token',
