@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:perisai_mobile/helpers/api_endpoints.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginPage extends StatefulWidget {
@@ -20,7 +21,7 @@ class _LoginPageState extends State<LoginPage> {
     setState(() => isLoading = true);
 
     final response = await http.post(
-      Uri.parse('http://127.0.0.1:93/api/login-satker'),
+      Uri.parse(ApiEndpoints.loginSatker),
       headers: {'Accept': 'application/json'},
       body: {
         'kode_satker': kodeController.text,
