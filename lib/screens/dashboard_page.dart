@@ -1,9 +1,10 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'package:perisai_mobile/helpers/api_endpoints.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
+import 'package:carousel_slider/carousel_slider.dart' as cs;
+import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import 'package:perisai_mobile/helpers/app_colors.dart';
+import 'package:perisai_mobile/helpers/api_endpoints.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -16,6 +17,14 @@ class _DashboardPageState extends State<DashboardPage> {
   String? name;
   String? role;
   bool isLoggingOut = false;
+  String? _pressedMenu;
+  int _activeIndex = 0;
+
+  final List<String> bannerImages = [
+    'assets/images/banner1.png',
+    'assets/images/banner2.png',
+    'assets/images/banner3.png',
+  ];
 
   @override
   void initState() {
@@ -23,6 +32,7 @@ class _DashboardPageState extends State<DashboardPage> {
     loadUser();
   }
 
+  /// 🔹 Ambil data user dari SharedPreferences
   Future<void> loadUser() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
@@ -31,6 +41,7 @@ class _DashboardPageState extends State<DashboardPage> {
     });
   }
 
+  /// 🔹 Logout user dari API dan hapus token lokal
   Future<void> logout() async {
     setState(() => isLoggingOut = true);
 
@@ -38,7 +49,7 @@ class _DashboardPageState extends State<DashboardPage> {
     final token = prefs.getString('token');
 
     try {
-      final response = await http.post(
+      await http.post(
         Uri.parse(ApiEndpoints.logoutSatker),
         headers: {
           'Accept': 'application/json',
@@ -47,54 +58,68 @@ class _DashboardPageState extends State<DashboardPage> {
       );
 
       await prefs.clear();
-
-      setState(() => isLoggingOut = false);
-
       if (!mounted) return;
+
       Navigator.pushReplacementNamed(context, '/');
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Berhasil Logout')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Berhasil Logout')),
+      );
     } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal Logout: $e')),
+      );
+    } finally {
       setState(() => isLoggingOut = false);
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Gagal Logout: $e')));
     }
   }
 
-  /// Widget menu (icon + label)
-  Widget buildMenuButton({
-    required IconData icon,
-    required String title,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        decoration: BoxDecoration(
-          gradient: AppColors.primaryGradient,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.15),
-              blurRadius: 6,
-              offset: const Offset(2, 3),
-            ),
-          ],
-        ),
-        padding: const EdgeInsets.all(16),
+  /// 🔹 Widget menu icon bundar (gaya OVO) + animasi bounce + font besar
+  Widget buildMenuIcon(IconData icon, String label, {VoidCallback? onTap}) {
+    return GestureDetector(
+      onTapDown: (_) => setState(() => _pressedMenu = label),
+      onTapUp: (_) {
+        Future.delayed(const Duration(milliseconds: 150),
+                () => setState(() => _pressedMenu = null));
+        if (onTap != null) onTap();
+      },
+      onTapCancel: () => setState(() => _pressedMenu = null),
+      child: AnimatedScale(
+        duration: const Duration(milliseconds: 150),
+        scale: _pressedMenu == label ? 0.9 : 1.0,
+        curve: Curves.easeOutBack,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 36, color: Colors.white),
-            const SizedBox(height: 8),
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeInOut,
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: _pressedMenu == label
+                        ? AppColors.primary.withOpacity(0.4)
+                        : Colors.black.withOpacity(0.1),
+                    blurRadius: 8,
+                    offset: const Offset(2, 3),
+                  ),
+                ],
+              ),
+              child: Icon(icon, color: AppColors.primary, size: 34),
+            ),
+            const SizedBox(height: 10),
             Text(
-              title,
+              label,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
               textAlign: TextAlign.center,
               style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
+                fontSize: 15, // 🔹 lebih besar & tegas
+                color: Colors.black87,
+                fontWeight: FontWeight.w600,
+                height: 1.3,
               ),
             ),
           ],
@@ -103,105 +128,191 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
+  /// 🔹 Banner slider promosi
+  Widget buildBannerCarousel() {
+    return Column(
+      children: [
+        cs.CarouselSlider.builder(
+          itemCount: bannerImages.length,
+          options: cs.CarouselOptions(
+            height: 170,
+            autoPlay: true,
+            enlargeCenterPage: true,
+            viewportFraction: 0.9,
+            onPageChanged: (index, reason) =>
+                setState(() => _activeIndex = index),
+          ),
+          itemBuilder: (context, index, _) {
+            return ClipRRect(
+              borderRadius: BorderRadius.circular(15),
+              child: Image.asset(
+                bannerImages[index],
+                fit: BoxFit.cover,
+                width: double.infinity,
+              ),
+            );
+          },
+        ),
+        const SizedBox(height: 8),
+        AnimatedSmoothIndicator(
+          activeIndex: _activeIndex,
+          count: bannerImages.length,
+          effect: const ExpandingDotsEffect(
+            dotHeight: 8,
+            dotWidth: 8,
+            activeDotColor: Colors.deepPurple,
+            dotColor: Colors.grey,
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Colors.grey[100],
       appBar: AppBar(
-        title: const Text('Dashboard'),
-        backgroundColor: AppColors.primary,
-        foregroundColor: AppColors.textOnPrimary,
+        elevation: 0,
+        backgroundColor: Colors.transparent,
         actions: [
           IconButton(
-            icon: const Icon(Icons.logout),
+            icon: const Icon(Icons.logout, color: Colors.black),
             tooltip: 'Logout',
             onPressed: isLoggingOut ? null : logout,
           ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
+      body: SingleChildScrollView(
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 🔹 Selamat Datang
-            Text(
-              'Selamat Datang, $name!',
-              style: const TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
+            // 🔹 Header gradient (seperti OVO)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(20),
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color(0xFF6A11CB), Color(0xFF2575FC)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(30),
+                  bottomRight: Radius.circular(30),
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
-            Divider(color: Colors.white.withOpacity(0.3)),
-            const SizedBox(height: 20),
-
-            // 🔹 Menu Grid
-            Expanded(
-              child: GridView.count(
-                crossAxisCount: 2,
-                crossAxisSpacing: 16,
-                mainAxisSpacing: 16,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  buildMenuButton(
-                    icon: Icons.dashboard,
-                    title: 'Dashboard',
-                    onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Menu Dashboard diklik')),
-                      );
-                    },
-                  ),
-                  buildMenuButton(
-                    icon: Icons.group,
-                    title: 'Data Media Partners',
-                    onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Menu Media Partners diklik')),
-                      );
-                    },
-                  ),
-                  buildMenuButton(
-                    icon: Icons.article,
-                    title: 'Data Berita',
-                    onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Menu Data Berita diklik')),
-                      );
-                    },
-                  ),
-                  buildMenuButton(
-                    icon: Icons.bar_chart,
-                    title: 'Laporan',
-                    onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Menu Laporan diklik')),
-                      );
-                    },
-                  ),
-                  buildMenuButton(
-                    icon: Icons.settings,
-                    title: 'Konfigurasi Berita',
-                    onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Menu Konfigurasi Berita diklik')),
-                      );
-                    },
-                  ),
-
-                  // ✅ Tampilkan ini hanya untuk Superadmin
-                  if (role == 'superadmin')
-                    buildMenuButton(
-                      icon: Icons.data_object,
-                      title: 'Data Master',
-                      onTap: () {
-                        //ini proses stacking laman page nya
-                        Navigator.pushNamed(context, '/data-master');
-                      },
+                  const Text(
+                    'PERISAI',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 26,
+                      fontWeight: FontWeight.bold,
                     ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Selamat Datang, $name!',
+                    style:
+                    const TextStyle(color: Colors.white70, fontSize: 16),
+                  ),
+                  const SizedBox(height: 20),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF6A11CB), Color(0xFF2575FC)],
+                      ),
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.15),
+                          blurRadius: 8,
+                          offset: const Offset(2, 3),
+                        ),
+                      ],
+                    ),
+                    child: const Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'PERISAI Account',
+                          style:
+                          TextStyle(color: Colors.white70, fontSize: 14),
+                        ),
+                        SizedBox(height: 5),
+                        Text(
+                          'Aktif',
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
               ),
+            ),
+
+            const SizedBox(height: 25),
+
+            // 🔹 Grid Menu (rapi & adaptif)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 3, // 🔹 ubah ke 3 agar label muat lebih besar
+                  crossAxisSpacing: 16,
+                  mainAxisSpacing: 20,
+                  childAspectRatio: 0.9, // 🔹 biar proporsional
+                ),
+                itemCount: (role == 'superadmin') ? 6 : 5,
+                itemBuilder: (context, index) {
+                  final menus = [
+                    {'icon': Icons.dashboard, 'label': 'Dashboard'},
+                    {'icon': Icons.group, 'label': 'Media\nPartners'},
+                    {'icon': Icons.article, 'label': 'Data\nBerita'},
+                    {'icon': Icons.bar_chart, 'label': 'Laporan'},
+                    {'icon': Icons.settings, 'label': 'Konfigurasi'},
+                  ];
+
+                  if (role == 'superadmin') {
+                    menus.add({'icon': Icons.data_object, 'label': 'Data\nMaster'});
+                  }
+
+                  final menu = menus[index];
+                  return buildMenuIcon(
+                    menu['icon'] as IconData,
+                    menu['label'] as String,
+                    onTap: () {
+                      if (menu['label'] == 'Data\nMaster') {
+                        Navigator.pushNamed(context, '/data-master');
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Menu ${menu['label']} diklik'),
+                            duration: const Duration(seconds: 1),
+                          ),
+                        );
+                      }
+                    },
+                  );
+                },
+              ),
+            ),
+
+            const SizedBox(height: 25),
+
+            // 🔹 Banner Slider
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: buildBannerCarousel(),
             ),
           ],
         ),
