@@ -55,7 +55,7 @@ class _DashboardPageState extends State<DashboardPage> {
       btnOkOnPress: () {
         _performLogout();
       },
-      btnCancelColor: Colors.grey,
+      btnCancelColor: Colors.green,
       btnOkColor: Colors.redAccent,
       titleTextStyle: const TextStyle(
         fontWeight: FontWeight.bold,
