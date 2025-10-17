@@ -29,9 +29,25 @@ class _DataMasterPageState extends State<DataMasterPage> {
     searchController.addListener(onSearchChanged);
   }
 
+  @override
+  void dispose(){
+    _debounce?.cancel();
+    searchController.dispose();
+    super.dispose();
+  }
+
+  /// Debounce pencarian
+  void onSearchChanged(){
+    if(_debounce?.isActive??false)_debounce!.cancel();
+    _debounce = Timer(const Duration(milliseconds: 500),(){
+      fetchUsers(query: searchController.text);
+    });
+  }
+
+  /// Ambil data pengguna
   Future<void> fetchUsers({String? query}) async {
     final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('toke');
+    final token = prefs.getString('token');
     setState(() => isLoading = true);
 
     try {
@@ -64,13 +80,7 @@ class _DataMasterPageState extends State<DataMasterPage> {
     }
   }
 
-  void onSearchChanged() {
-    if (_debounce?.isActive ?? false) _debounce!.cancel();
-    _debounce = Timer(const Duration(milliseconds: 500), () {
-      fetchUsers(query: searchController.text);
-    });
-  }
-
+  /// Ambil kode satker baru
   Future<String?> getNewKodeSatker() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
@@ -175,7 +185,7 @@ class _DataMasterPageState extends State<DataMasterPage> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    user == null ? 'Tambah Satker Baru' : 'Edit Satker',
+                    user == null ? 'Tambah User Baru' : 'Edit User',
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -285,7 +295,7 @@ class _DataMasterPageState extends State<DataMasterPage> {
                       );
                     },
                     icon: const Icon(Icons.save),
-                    label: Text(user == null ? 'Simpan' : 'Perbarui'),
+                    label: Text(user == null ? 'Simpan' : 'Perbarui', style: TextStyle(color: Colors.white),),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
                       padding: const EdgeInsets.symmetric(
@@ -319,7 +329,7 @@ class _DataMasterPageState extends State<DataMasterPage> {
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Hapus'),
+            child: const Text('Hapus',style: TextStyle(color: Colors.white),),
           ),
         ],
       ),
@@ -397,8 +407,50 @@ class _DataMasterPageState extends State<DataMasterPage> {
                           color: Colors.white.withOpacity(0.1),
                           margin: const EdgeInsets.symmetric(vertical: 8),
                           child: ListTile(
-                            /*triggerjo*/
-                            leading: CircleAvatar(),
+                            leading: CircleAvatar(
+                              backgroundColor: AppColors.primary,
+                              backgroundImage: user['foto'] != null
+                                  ? NetworkImage(
+                                      ApiEndpoints.fotoSatker(user['foto']),
+                                    )
+                                  : null,
+                              child: user['foto'] == null
+                                  ? const Icon(
+                                      Icons.person,
+                                      color: Colors.white,
+                                    )
+                                  : null,
+                            ),
+                            title: Text(
+                              user['name'] ?? 'Tanpa Nama',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            subtitle: Text(
+                              '${user['kode_satker']} - ${user['roles']}',
+                              style: const TextStyle(color: Colors.white70),
+                            ),
+                            trailing: Wrap(
+                              children: [
+                                IconButton(
+                                  icon: const Icon(
+                                    Icons.edit,
+                                    color: Colors.blueAccent,
+                                  ),
+                                  onPressed: () => showForm(user: user),
+                                ),
+                                IconButton(
+                                  icon: const Icon(
+                                    Icons.delete,
+                                    color: Colors.redAccent,
+                                  ),
+                                  onPressed: () =>
+                                      confirmDelete(user['id'], user['name']),
+                                ),
+                              ],
+                            ),
                           ),
                         );
                       },

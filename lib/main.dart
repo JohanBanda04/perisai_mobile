@@ -1,23 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:perisai_mobile/pages/data_master_page.dart';
-import 'screens/login_page.dart';
-import 'screens/dashboard_page.dart';
+import 'package:perisai_mobile/pages/splash_page.dart';
+import 'package:perisai_mobile/screens/dashboard_page.dart';
+import 'package:perisai_mobile/screens/login_page.dart';
 
 void main() {
-  runApp(const PerisaiApp());
+  runApp(const MyApp());
 }
 
-class PerisaiApp extends StatelessWidget {
-  const PerisaiApp({super.key});
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'PERISAI',
       debugShowCheckedModeBanner: false,
+      title: 'PERISAI App',
       theme: ThemeData(primarySwatch: Colors.indigo),
-      initialRoute: '/',
+      initialRoute: '/splash',
       routes: {
+        '/splash': (context) => const SplashPage(),
         '/': (context) => const LoginPage(),
         '/dashboard': (context) => const DashboardPage(),
         '/data-master': (context) => const DataMasterPage(),
