@@ -8,6 +8,7 @@ class ApiEndpoints{
   //  Auth
   static const String loginSatker = '${ApiConfig.baseUrl}/login-satker';
   static const String logoutSatker = '${ApiConfig.baseUrl}/logout-satker';
+  static const user = '${ApiConfig.baseUrl}/user'; // 🔹 endpoint untuk validasi token
 
   //  Data Master (superadmin)
   static const String dataSatker = '${ApiConfig.baseUrl}/datasatker';

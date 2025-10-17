@@ -1,3 +1,4 @@
+import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
@@ -41,15 +42,41 @@ class _DashboardPageState extends State<DashboardPage> {
     });
   }
 
-  /// 🔹 Logout user dari API dan hapus token lokal
-  Future<void> logout() async {
+  Future<void> _confirmLogout() async {
+    AwesomeDialog(
+      context: context,
+      dialogType: DialogType.warning,
+      animType: AnimType.scale,
+      title: 'Konfirmasi Logout',
+      desc: 'Apakah Anda yakin ingin keluar dari aplikasi?',
+      btnCancelText: 'Batal',
+      btnOkText: 'Ya, Logout',
+      btnCancelOnPress: () {},
+      btnOkOnPress: () {
+        _performLogout();
+      },
+      btnCancelColor: Colors.green,
+      btnOkColor: Colors.redAccent,
+      titleTextStyle: const TextStyle(
+        fontWeight: FontWeight.bold,
+        color: Colors.black87,
+      ),
+      descTextStyle: const TextStyle(
+        color: Colors.black54,
+        fontSize: 14,
+      ),
+    ).show();
+  }
+
+
+  Future<void> _performLogout() async {
     setState(() => isLoggingOut = true);
 
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
 
     try {
-      await http.post(
+      final response = await http.post(
         Uri.parse(ApiEndpoints.logoutSatker),
         headers: {
           'Accept': 'application/json',
@@ -179,7 +206,7 @@ class _DashboardPageState extends State<DashboardPage> {
           IconButton(
             icon: const Icon(Icons.logout, color: Colors.black),
             tooltip: 'Logout',
-            onPressed: isLoggingOut ? null : logout,
+            onPressed: isLoggingOut ? null : _confirmLogout,
           ),
         ],
       ),

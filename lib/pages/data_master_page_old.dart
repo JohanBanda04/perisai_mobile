@@ -23,28 +23,27 @@ class _DataMasterPageState extends State<DataMasterPage> {
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
     fetchUsers();
     searchController.addListener(onSearchChanged);
   }
 
   @override
-  void dispose(){
+  void dispose() {
     _debounce?.cancel();
     searchController.dispose();
     super.dispose();
   }
 
-  /// Debounce pencarian
-  void onSearchChanged(){
-    if(_debounce?.isActive??false)_debounce!.cancel();
-    _debounce = Timer(const Duration(milliseconds: 500),(){
+  /// 🔍 Debounce pencarian
+  void onSearchChanged() {
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+    _debounce = Timer(const Duration(milliseconds: 500), () {
       fetchUsers(query: searchController.text);
     });
   }
 
-  /// Ambil data pengguna
+  /// 🔹 Ambil data pengguna
   Future<void> fetchUsers({String? query}) async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
@@ -70,7 +69,7 @@ class _DataMasterPageState extends State<DataMasterPage> {
           isLoading = false;
         });
       } else {
-        throw Exception("Gagal memuat data (${response.statusCode})");
+        throw Exception('Gagal memuat data (${response.statusCode})');
       }
     } catch (e) {
       setState(() => isLoading = false);
@@ -80,7 +79,7 @@ class _DataMasterPageState extends State<DataMasterPage> {
     }
   }
 
-  /// Ambil kode satker baru
+  /// 🔹 Ambil kode satker baru
   Future<String?> getNewKodeSatker() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
@@ -99,12 +98,12 @@ class _DataMasterPageState extends State<DataMasterPage> {
         return data['kode_baru'];
       }
     } catch (e) {
-      debugPrint('Gagal ambil kode satker baru : $e');
+      debugPrint('Gagal ambil kode satker baru: $e');
     }
     return null;
   }
 
-  /// Tambah / Update pengguna
+  /// 🟣 Tambah / Update pengguna
   Future<void> submitSatker(
     Map<String, String> fields, {
     File? foto,
@@ -115,6 +114,7 @@ class _DataMasterPageState extends State<DataMasterPage> {
     final uri = id == null
         ? Uri.parse(ApiEndpoints.dataSatker)
         : Uri.parse('${ApiEndpoints.dataSatker}/$id');
+
     final request = http.MultipartRequest(id == null ? 'POST' : 'POST', uri)
       ..headers['Authorization'] = 'Bearer $token'
       ..fields.addAll(fields);
@@ -146,7 +146,7 @@ class _DataMasterPageState extends State<DataMasterPage> {
     }
   }
 
-  // Form tambah / edit
+  /// 🧩 Form Tambah / Edit
   Future<void> showForm({Map<String, dynamic>? user}) async {
     final nameController = TextEditingController(text: user?['name'] ?? '');
     final emailController = TextEditingController(text: user?['email'] ?? '');
@@ -164,6 +164,7 @@ class _DataMasterPageState extends State<DataMasterPage> {
       final newKode = await getNewKodeSatker();
       if (newKode != null) kodeController.text = newKode;
     }
+
     await showModalBottomSheet(
       isScrollControlled: true,
       context: context,
@@ -185,7 +186,7 @@ class _DataMasterPageState extends State<DataMasterPage> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    user == null ? 'Tambah User Baru' : 'Edit User',
+                    user == null ? 'Tambah Satker Baru' : 'Edit Satker',
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -217,6 +218,7 @@ class _DataMasterPageState extends State<DataMasterPage> {
                     ),
                   ),
                   const SizedBox(height: 16),
+
                   TextField(
                     controller: nameController,
                     decoration: const InputDecoration(labelText: 'Nama Satker'),
@@ -268,10 +270,10 @@ class _DataMasterPageState extends State<DataMasterPage> {
                       if (nameController.text.isEmpty ||
                           emailController.text.isEmpty ||
                           kodeController.text.isEmpty ||
-                          searchController == null) {
+                          selectedRole == null) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
-                            content: Text("Harap isi semua field wajib!"),
+                            content: Text('Harap isi semua field wajib!'),
                           ),
                         );
                         return;
@@ -295,7 +297,7 @@ class _DataMasterPageState extends State<DataMasterPage> {
                       );
                     },
                     icon: const Icon(Icons.save),
-                    label: Text(user == null ? 'Simpan' : 'Perbarui', style: TextStyle(color: Colors.white),),
+                    label: Text(user == null ? 'Simpan' : 'Perbarui'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
                       padding: const EdgeInsets.symmetric(
@@ -314,7 +316,7 @@ class _DataMasterPageState extends State<DataMasterPage> {
     );
   }
 
-  /// Konfirmasi dan hapus data
+  /// 🔴 Konfirmasi dan hapus data
   Future<void> confirmDelete(int id, String name) async {
     final confirm = await showDialog<bool>(
       context: context,
@@ -329,7 +331,7 @@ class _DataMasterPageState extends State<DataMasterPage> {
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Hapus',style: TextStyle(color: Colors.white),),
+            child: const Text('Hapus'),
           ),
         ],
       ),
@@ -347,6 +349,7 @@ class _DataMasterPageState extends State<DataMasterPage> {
       Uri.parse('${ApiEndpoints.dataSatker}/$id'),
       headers: {'Accept': 'application/json', 'Authorization': 'Bearer $token'},
     );
+
     if (response.statusCode == 200) {
       ScaffoldMessenger.of(
         context,
@@ -429,7 +432,7 @@ class _DataMasterPageState extends State<DataMasterPage> {
                               ),
                             ),
                             subtitle: Text(
-                              '${user['kode_satker']} - ${user['roles']}',
+                              '${user['kode_satker']} • ${user['roles']}',
                               style: const TextStyle(color: Colors.white70),
                             ),
                             trailing: Wrap(
